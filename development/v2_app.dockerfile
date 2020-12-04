@@ -38,8 +38,8 @@ WORKDIR /var/www
 
 RUN composer install --no-dev
 
-RUN php artisan cache:clear
+RUN mkdir storage/framework/cache/data
 
-RUN php artisan optimize
+RUN php artisan cache:clear
 
 USER $user

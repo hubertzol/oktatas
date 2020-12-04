@@ -1,45 +1,50 @@
-version: '3'
-
+version: "3.7"
 services:
-
   app:
-    container_name: laravel_app
     build:
+      args:
+        user: sammy
+        uid: 1000
       context: ./
-      dockerfile: development/app.dockerfile
+      dockerfile: Dockerfile
+    image: laravel
+    command: cd public; composer install;
+    container_name: laravel-app
+    restart: unless-stopped
+    working_dir: /var/www/
     volumes:
-      - ./storage:/var/www/storage
-    user: 1000:1000
-    env_file: '.env.prod'
-    environment:
-      - "DB_HOST=database"
-      - "REDIS_HOST=cache"
+      - ./:/var/www
+    networks:
+      - laravel
 
-  web:
-    container_name: nginx_server
-    build:
-      context: ./
-      dockerfile: development/web.dockerfile
-    volumes:
-      - ./storage/logs/:/var/log/nginx
-    ports:
-      - 8990:80
-      
-  database:
-    container_name: mysql_database
+  db:
     image: mysql:5.7
-    volumes:
-      - dbdata:/var/lib/mysql
+    container_name: laravel-db
+    restart: unless-stopped
     environment:
-      - "MYSQL_DATABASE=Baly"
-      - "MYSQL_USER=phpmyadmin"
-      - "MYSQL_PASSWORD=phpmyadmin"
-      - "MYSQL_ROOT_PASSWORD=finallyJDBC2017."
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - ./docker-compose/mysql:/docker-entrypoint-initdb.d
+    networks:
+      - laravel
+
+  nginx:
+    image: nginx:alpine
+    container_name: laravel-nginx
+    restart: unless-stopped
     ports:
-      - 8991:3306
+      - 8000:80
+    volumes:
+      - ./:/var/www
+      - ./docker-compose/nginx:/etc/nginx/conf.d/
+    networks:
+      - laravel
 
-  cache:
-    image: redis:3.0-alpine
-
-volumes:
-  dbdata:
+networks:
+  laravel:
+    driver: bridge
