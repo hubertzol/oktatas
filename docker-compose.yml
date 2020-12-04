@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 
 services:
 
@@ -9,6 +9,7 @@ services:
       dockerfile: development/app.dockerfile
     volumes:
       - ./storage:/var/www/storage
+    user: 1000:1000
     env_file: '.env.prod'
     environment:
       - "DB_HOST=database"
